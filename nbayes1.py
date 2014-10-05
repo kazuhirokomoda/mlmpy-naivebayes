@@ -9,75 +9,74 @@ http://www.kamishima.net/mlmpyja/
 
 import numpy as np
 
+# public symbols
+__all__ = ['NaiveBayes1']
+
 class NaiveBayes1(object):
-	"""
-	Naive Bayes class (1)
-	"""
+  """
+  Naive Bayes class (1)
+  """
 
-	def __init__(self):
-		self.pY_ = None
-		self.pXgY_ = None
+  def __init__(self):
+    self.pY_ = None
+    self.pXgY_ = None
 
+  def fit(self, X, y):
+    """
+    Fitting model
+    """
 
-	def fit(self, X, y):
-		"""
-		Fitting model
-		"""
+    n_samples = X.shape[0]
+    n_features = X.shape[1]
+    # TODO improve assumptions
+    n_classes = 2 # C
+    n_fvalues = 2 # K
 
-		n_samples = X.shape[0]
-		n_features = X.shape[1]
-		# TODO improve assumptions
-		n_classes = 2 # C
-		n_fvalues = 2 # K
+    # check the size of y
+    if n_samples != len(y):
+      raise ValueError('Mismatched number of samples.')
 
-		# check the size of y
-		if n_samples != len(y):
-			raise ValueError('Mismatched number of samples.')
+    ## train class distribution
+    # count up n[yi=y]
+    nY = np.zeros(n_classes, dtype=np.int)
+    for i in xrange(n_samples):
+      nY[y[i]] += 1
 
-		## train class distribution
-		# count up n[yi=y]
-		nY = np.zeros(n_classes, dtype=np.int)
-		for i in xrange(n_samples):
-			nY[y[i]] += 1
+    # calculate pY_
+    self.pY_ = np.empty(n_classes, dtype=np.float)
+    for yi in xrange(n_classes):
+      self.pY_[yi] = nY[yi] / np.float(n_samples)
 
-		# calculate pY_
-		self.pY_ = np.empty(n_classes, dtype=np.float)
-		for yi in xrange(n_classes):
-			self.pY_[yi] = nY[yi] / np.float(n_samples)
+    ## train feature distribution
+    # count up n[x_ij=xj, yi=y]
+    nXY = np.zeros((n_features, n_fvalues, n_classes), dtype=np.int)
+    for i in xrange(n_samples):
+      for j in xrange(n_features):
+        nXY[j, X[i,j], y[i]] += 1
 
-		## train feature distribution
-		# count up 
-		nXY = np.zeros((n_features, n_fvalues, n_classes), dtype=np.int)
-		for i in xrange(n_samples):
-			for j in xrange(n_features):
-				nXY[j, X[i,j], y[i]] += 1
+    # calculate pXgY_
+    self.pXgY_ = np.empty((n_features, n_fvalues, n_classes), dtype=np.float)
+    for j in xrange(n_features):
+      for xi in xrange(n_fvalues):
+        for yi in xrange(n_classes):
+          self.pXgY_[j, xi, yi] = nXY[j, xi, yi] / np.float(nY[yi])
 
-		# calculate pXgY_
-		self.pXgY_ = np.empty((n_features, n_fvalues, n_classes), dtype=np.float)
-		for j in xrange(n_features):
-			for xi in xrange(n_fvalues):
-				for yi in xrange(n_classes):
-					self.pXgY_ = nXY[j, xi, yi] / np.float(nY[yi])
+  def predict(self, X):
+    """
+    Predict class
+    """
 
+    n_samples = X.shape[0]
+    n_features = X.shape[1]
 
-	def predict(self, X):
-		"""
-		Predict class
-		"""
+    # memory for return values
+    y = np.empty(n_samples, dtype=np.int)
 
-        n_samples = X.shape[0]
-        n_features = X.shape[1]
+    # for each feature in X
+    for i, xi in enumerate(X):
+      # calculate joint probability
+      logpXY = np.log(self.pY_) + np.sum(np.log(self.pXgY_[np.arange(n_features), xi, :]), axis=0)
+      # predict class
+      y[i] = np.argmax(logpXY)
 
-        # memory for return values
-        y = np.empty(n_samples, dtype=np.int)
-
-        # for each feature in X
-        for i, xi in enumerate(X):
-        	# calculate joint probability
-        	logpXY = np.log(self.pY_) + np.sum(np.log(self.pXgY_[np.arange(n_features), xi, :]), axis=0)
-
-        	# predict class
-        	y[i] = np.argmax(logpXY)
-
-        return y	
-
+    return y
