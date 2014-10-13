@@ -113,6 +113,16 @@ class NaiveBayes2(BaseBinaryNaiveBayes):
   def fit(self, X, y):
     """
     Fitting model
+
+    ブロードキャスト機能を用いてfor文を減らす方法
+
+    0. 最終結果を格納する配列を構成する次元に加え、データサンプルの次元も加えたfor文を作成する．(1)->(2) 
+    1. 出力配列の次元数を for ループの数とする．
+    2. 各 for ループごとに，出力配列の次元を割り当てる．
+    3. 計算に必要な配列を生成する．このとき，ループ変数がループに割り当てた次元に対応するようにする．
+    4. 冗長な配列を整理統合する．
+    5. 要素ごとの演算をユニバーサル関数の機能を用いて実行する．
+    6. np.sum() などの集約演算を適用して，最終結果を得る．    
     """
 
     n_samples = X.shape[0]
@@ -135,7 +145,7 @@ class NaiveBayes2(BaseBinaryNaiveBayes):
       nY[y[i]] += 1
     """
 
-    # (2) 各クラスごとに，現在の対象クラスの事例であったらなら対応する要素のカウンタを一つずつ増やす
+    # (2) 各クラスごとに，現在の対象クラスの事例であったなら対応する要素のカウンタを一つずつ増やす
     """
     nY = np.zeros(n_classes, dtype=np.int)
     for yi in xrange(n_classes):
@@ -182,7 +192,7 @@ class NaiveBayes2(BaseBinaryNaiveBayes):
     nXY = np.zeros((n_features, n_fvalues, n_classes), dtype=np.int)
     for i in xrange(n_samples):
       for j in xrange(n_features):
-        for yi in xrange(n_classes):
+        for yi in xrange(n_classes): # yiとxiのforループの順番は、逆の方がむしろnXYの次元の順番と整合性が取れる？
           for xi in xrange(n_fvalues):
             if y[i]==yi and X[i,j]==xi:
               nXY[j, xi, yi] += 1
